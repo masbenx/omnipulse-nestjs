@@ -1,6 +1,6 @@
 {
     "name": "@omnipulse/nestjs",
-    "version": "0.1.0",
+    "version": "0.1.1",
     "description": "Official NestJS SDK for OmniPulse Monitoring — Interceptors, Exception Filters, and Structured Logging for NestJS 10+",
     "main": "dist/index.js",
     "types": "dist/index.d.ts",

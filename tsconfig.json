@@ -16,6 +16,7 @@
         "strict": true,
         "esModuleInterop": true,
         "skipLibCheck": true,
+        "incremental": true,
         "forceConsistentCasingInFileNames": true,
         "moduleResolution": "node",
         "resolveJsonModule": true,
