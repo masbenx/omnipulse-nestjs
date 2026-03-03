@@ -9,17 +9,10 @@
     ],
     "scripts": {
         "build": "npx -y typescript tsc",
+        "prepare": "npm run build",
         "test": "echo 'No tests configured yet'"
     },
-    "keywords": [
-        "monitoring",
-        "omnipulse",
-        "nestjs",
-        "apm",
-        "error-tracking",
-        "logging",
-        "tracing"
-    ],
+    "keywords": ["monitoring","omnipulse","nestjs","apm","error-tracking","logging","tracing"],
     "author": "OmniPulse Team",
     "license": "MIT",
     "peerDependencies": {
