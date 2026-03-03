@@ -8,7 +8,8 @@
         "dist/"
     ],
     "scripts": {
-        "build": "npx -y typescript tsc",
+        "build": "tsc",
+        "prepare": "npm run build",
         "test": "echo 'No tests configured yet'"
     },
     "keywords": [
@@ -25,8 +26,8 @@
     "peerDependencies": {
         "@nestjs/common": ">=10.0.0",
         "@nestjs/core": ">=10.0.0",
-        "rxjs": ">=7.0.0",
-        "reflect-metadata": ">=0.1.0"
+        "reflect-metadata": ">=0.1.0",
+        "rxjs": ">=7.0.0"
     },
     "devDependencies": {
         "@nestjs/common": "^10.0.0",
@@ -35,6 +36,6 @@
         "@types/node": "^20.0.0",
         "reflect-metadata": "^0.2.0",
         "rxjs": "^7.0.0",
-        "typescript": "^5.0.0"
+        "typescript": "^5.9.3"
     }
 }

@@ -62,7 +62,9 @@ export class Transport {
     public flushErrors(): void {
         if (this.errorQueue.length === 0) return;
         const batch = this.errorQueue.splice(0);
-        this.send('/api/ingest/app-errors', { entries: batch });
+        for (const error of batch) {
+            this.send('/api/ingest/app-errors', error);
+        }
     }
 
     public flushTraces(): void {
