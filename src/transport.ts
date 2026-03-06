@@ -5,7 +5,6 @@
 
 import * as http from 'http';
 import * as https from 'https';
-import * as zlib from 'zlib';
 import { URL } from 'url';
 import { OmniPulseConfig, LogEntry, ErrorEntry, SpanEntry, RequestEntry } from './types';
 
@@ -179,16 +178,8 @@ export class Transport {
     }
 
     private send(path: string, payload: Record<string, any>): void {
-        const data = JSON.stringify(payload);
-
-        zlib.gzip(data, (err, buffer) => {
-            if (err) {
-                if (this.config.debug) {
-                    console.error('[OmniPulse] GZIP failed:', err);
-                }
-                return;
-            }
-
+        try {
+            const data = JSON.stringify(payload);
             const endpoint = this.config.endpoint || 'https://api.omnipulse.cloud';
             const url = new URL(path, endpoint);
             const isHttps = url.protocol === 'https:';
@@ -201,8 +192,7 @@ export class Transport {
                 path: url.pathname + url.search,
                 headers: {
                     'Content-Type': 'application/json',
-                    'Content-Encoding': 'gzip',
-                    'Content-Length': buffer.length,
+                    'Content-Length': Buffer.byteLength(data),
                     'X-Ingest-Key': this.config.apiKey,
                     'User-Agent': USER_AGENT,
                 },
@@ -220,9 +210,13 @@ export class Transport {
             });
 
             req.on('timeout', () => req.destroy());
-            req.write(buffer);
+            req.write(data);
             req.end();
-        });
+        } catch (e) {
+            if (this.config.debug) {
+                console.error('[OmniPulse] Transport send exception:', e);
+            }
+        }
     }
 
     public stop(): void {
