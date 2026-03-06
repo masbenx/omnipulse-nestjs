@@ -12,13 +12,14 @@ import {
 } from '@nestjs/common';
 import { Observable, tap } from 'rxjs';
 import { randomUUID } from 'crypto';
-import { OmniPulseConfig, SpanEntry, OMNIPULSE_CONFIG } from './types';
+import { OmniPulseConfig, SpanEntry, RequestEntry, OMNIPULSE_CONFIG } from './types';
 import { Transport } from './transport';
 
 @Injectable()
 export class OmniPulseInterceptor implements NestInterceptor {
     private transport: Transport;
     private serviceName: string;
+    private environment: string;
 
     constructor(
         @Inject(OMNIPULSE_CONFIG) private config: OmniPulseConfig,
@@ -26,6 +27,7 @@ export class OmniPulseInterceptor implements NestInterceptor {
     ) {
         this.transport = transport;
         this.serviceName = config.serviceName || 'nestjs-app';
+        this.environment = config.environment || 'production';
     }
 
     intercept(context: ExecutionContext, next: CallHandler): Observable<any> {
@@ -43,16 +45,16 @@ export class OmniPulseInterceptor implements NestInterceptor {
         return next.handle().pipe(
             tap({
                 next: () => {
-                    this.recordSpan(request, context, startTime, traceId, spanId, 'ok');
+                    this.recordRequest(request, context, startTime, traceId, spanId, 'ok');
                 },
                 error: (error) => {
-                    this.recordSpan(request, context, startTime, traceId, spanId, 'error', error);
+                    this.recordRequest(request, context, startTime, traceId, spanId, 'error', error);
                 },
             }),
         );
     }
 
-    private recordSpan(
+    private recordRequest(
         request: any,
         context: ExecutionContext,
         startTime: number,
@@ -68,15 +70,16 @@ export class OmniPulseInterceptor implements NestInterceptor {
             const handler = context.getHandler();
             const controllerClass = context.getClass();
 
+            // 1) Send trace span (for Traces tab)
             const span: SpanEntry = {
                 trace_id: traceId,
                 span_id: spanId,
                 name: `${request.method} ${request.route?.path || request.url}`,
-                start_time: new Date(startTime).toISOString(),
-                end_time: new Date(endTime).toISOString(),
+                start_ts: new Date(startTime).toISOString(),
                 duration_ms: durationMs,
-                status_code: status,
-                status_message: error?.message,
+                status: status,
+                service: this.serviceName,
+                kind: 'server',
                 attributes: {
                     'http.method': request.method,
                     'http.url': request.url,
@@ -86,11 +89,22 @@ export class OmniPulseInterceptor implements NestInterceptor {
                     'http.client_ip': request.ip || request.connection?.remoteAddress,
                     'nestjs.controller': controllerClass?.name,
                     'nestjs.handler': handler?.name,
-                    'service': this.serviceName,
                 },
+                env: this.environment,
             };
-
             this.transport.addSpan(span);
+
+            // 2) Send request event (for Overview dashboard: 24h Requests, Avg Latency, Success Rate)
+            const requestEntry: RequestEntry = {
+                timestamp: new Date(startTime).toISOString(),
+                method: request.method,
+                route: request.route?.path || request.url,
+                status: response.statusCode,
+                duration_ms: durationMs,
+                env: this.environment,
+                trace_id: traceId,
+            };
+            this.transport.addRequest(requestEntry);
 
             if (this.config.debug) {
                 console.log(

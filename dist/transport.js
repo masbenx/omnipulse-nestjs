@@ -49,6 +49,7 @@ class Transport {
         this.logQueue = [];
         this.errorQueue = [];
         this.spanQueue = [];
+        this.requestQueue = [];
         this.flushInterval = null;
         this.config = config;
         this.batchSize = config.batchSize ?? 50;
@@ -74,6 +75,12 @@ class Transport {
             this.flushTraces();
         }
     }
+    addRequest(entry) {
+        this.requestQueue.push(entry);
+        if (this.requestQueue.length >= this.batchSize) {
+            this.flushRequests();
+        }
+    }
     // ─── Flush Methods ───────────────────────
     flushLogs() {
         if (this.logQueue.length === 0)
@@ -95,10 +102,19 @@ class Transport {
         const batch = this.spanQueue.splice(0);
         this.send('/api/ingest/app-traces', { spans: batch });
     }
+    flushRequests() {
+        if (this.requestQueue.length === 0)
+            return;
+        const batch = this.requestQueue.splice(0);
+        for (const req of batch) {
+            this.send('/api/ingest/app-request', req);
+        }
+    }
     flushAll() {
         this.flushLogs();
         this.flushErrors();
         this.flushTraces();
+        this.flushRequests();
     }
     // ─── Test Connection ─────────────────────
     testConnection() {

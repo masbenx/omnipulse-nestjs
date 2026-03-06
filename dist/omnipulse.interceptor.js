@@ -27,6 +27,7 @@ let OmniPulseInterceptor = class OmniPulseInterceptor {
         this.config = config;
         this.transport = transport;
         this.serviceName = config.serviceName || 'nestjs-app';
+        this.environment = config.environment || 'production';
     }
     intercept(context, next) {
         const ctx = context.switchToHttp();
@@ -40,29 +41,30 @@ let OmniPulseInterceptor = class OmniPulseInterceptor {
         request.__omnipulse_start_time = startTime;
         return next.handle().pipe((0, rxjs_1.tap)({
             next: () => {
-                this.recordSpan(request, context, startTime, traceId, spanId, 'ok');
+                this.recordRequest(request, context, startTime, traceId, spanId, 'ok');
             },
             error: (error) => {
-                this.recordSpan(request, context, startTime, traceId, spanId, 'error', error);
+                this.recordRequest(request, context, startTime, traceId, spanId, 'error', error);
             },
         }));
     }
-    recordSpan(request, context, startTime, traceId, spanId, status, error) {
+    recordRequest(request, context, startTime, traceId, spanId, status, error) {
         try {
             const endTime = Date.now();
             const durationMs = endTime - startTime;
             const response = context.switchToHttp().getResponse();
             const handler = context.getHandler();
             const controllerClass = context.getClass();
+            // 1) Send trace span (for Traces tab)
             const span = {
                 trace_id: traceId,
                 span_id: spanId,
                 name: `${request.method} ${request.route?.path || request.url}`,
-                start_time: new Date(startTime).toISOString(),
-                end_time: new Date(endTime).toISOString(),
+                start_ts: new Date(startTime).toISOString(),
                 duration_ms: durationMs,
-                status_code: status,
-                status_message: error?.message,
+                status: status,
+                service: this.serviceName,
+                kind: 'server',
                 attributes: {
                     'http.method': request.method,
                     'http.url': request.url,
@@ -72,10 +74,21 @@ let OmniPulseInterceptor = class OmniPulseInterceptor {
                     'http.client_ip': request.ip || request.connection?.remoteAddress,
                     'nestjs.controller': controllerClass?.name,
                     'nestjs.handler': handler?.name,
-                    'service': this.serviceName,
                 },
+                env: this.environment,
             };
             this.transport.addSpan(span);
+            // 2) Send request event (for Overview dashboard: 24h Requests, Avg Latency, Success Rate)
+            const requestEntry = {
+                timestamp: new Date(startTime).toISOString(),
+                method: request.method,
+                route: request.route?.path || request.url,
+                status: response.statusCode,
+                duration_ms: durationMs,
+                env: this.environment,
+                trace_id: traceId,
+            };
+            this.transport.addRequest(requestEntry);
             if (this.config.debug) {
                 console.log(`[OmniPulse] ${request.method} ${request.url} → ${response.statusCode} (${durationMs}ms)`);
             }
