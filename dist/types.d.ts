@@ -48,9 +48,9 @@ export interface ErrorEntry {
     type: string;
     message: string;
     stack?: string;
-    url?: string;
+    route?: string;
     method?: string;
-    status_code?: number;
+    status?: number;
     timestamp: string;
     service?: string;
     meta?: Record<string, any>;
