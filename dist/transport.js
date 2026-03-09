@@ -40,7 +40,6 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.Transport = void 0;
 const http = __importStar(require("http"));
 const https = __importStar(require("https"));
-const zlib = __importStar(require("zlib"));
 const url_1 = require("url");
 const SDK_VERSION = '0.1.1';
 const USER_AGENT = `omnipulse-nestjs-sdk/v${SDK_VERSION}`;
@@ -49,6 +48,7 @@ class Transport {
         this.logQueue = [];
         this.errorQueue = [];
         this.spanQueue = [];
+        this.requestQueue = [];
         this.flushInterval = null;
         this.config = config;
         this.batchSize = config.batchSize ?? 50;
@@ -74,6 +74,12 @@ class Transport {
             this.flushTraces();
         }
     }
+    addRequest(entry) {
+        this.requestQueue.push(entry);
+        if (this.requestQueue.length >= this.batchSize) {
+            this.flushRequests();
+        }
+    }
     // ─── Flush Methods ───────────────────────
     flushLogs() {
         if (this.logQueue.length === 0)
@@ -95,10 +101,19 @@ class Transport {
         const batch = this.spanQueue.splice(0);
         this.send('/api/ingest/app-traces', { spans: batch });
     }
+    flushRequests() {
+        if (this.requestQueue.length === 0)
+            return;
+        const batch = this.requestQueue.splice(0);
+        for (const req of batch) {
+            this.send('/api/ingest/app-request', req);
+        }
+    }
     flushAll() {
         this.flushLogs();
         this.flushErrors();
         this.flushTraces();
+        this.flushRequests();
     }
     // ─── Test Connection ─────────────────────
     testConnection() {
@@ -177,14 +192,8 @@ class Transport {
         }, this.flushMs);
     }
     send(path, payload) {
-        const data = JSON.stringify(payload);
-        zlib.gzip(data, (err, buffer) => {
-            if (err) {
-                if (this.config.debug) {
-                    console.error('[OmniPulse] GZIP failed:', err);
-                }
-                return;
-            }
+        try {
+            const data = JSON.stringify(payload);
             const endpoint = this.config.endpoint || 'https://api.omnipulse.cloud';
             const url = new url_1.URL(path, endpoint);
             const isHttps = url.protocol === 'https:';
@@ -196,8 +205,7 @@ class Transport {
                 path: url.pathname + url.search,
                 headers: {
                     'Content-Type': 'application/json',
-                    'Content-Encoding': 'gzip',
-                    'Content-Length': buffer.length,
+                    'Content-Length': Buffer.byteLength(data),
                     'X-Ingest-Key': this.config.apiKey,
                     'User-Agent': USER_AGENT,
                 },
@@ -212,9 +220,14 @@ class Transport {
                 }
             });
             req.on('timeout', () => req.destroy());
-            req.write(buffer);
+            req.write(data);
             req.end();
-        });
+        }
+        catch (e) {
+            if (this.config.debug) {
+                console.error('[OmniPulse] Transport send exception:', e);
+            }
+        }
     }
     stop() {
         if (this.flushInterval) {

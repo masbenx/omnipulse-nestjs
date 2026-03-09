@@ -1,3 +1,10 @@
+## [v0.1.2] - 2026-03-09
+### Fixed
+- Align span fields with backend DTO and add request event tracking
+- Replace GZIP transport with plain JSON for compatibility
+- Fix `shouldCapture` threshold from 500 to 400 (now captures 4xx errors like 401/403)
+- Fix `ErrorEntry` field names: `status_code` → `status`, `url` → `route`
+
 ## [v0.1.1] - 2026-03-03
 ### Changed
 - Automated release via script.

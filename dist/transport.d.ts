@@ -1,9 +1,10 @@
-import { OmniPulseConfig, LogEntry, ErrorEntry, SpanEntry } from './types';
+import { OmniPulseConfig, LogEntry, ErrorEntry, SpanEntry, RequestEntry } from './types';
 export declare class Transport {
     private config;
     private logQueue;
     private errorQueue;
     private spanQueue;
+    private requestQueue;
     private flushInterval;
     private readonly batchSize;
     private readonly flushMs;
@@ -11,9 +12,11 @@ export declare class Transport {
     addLog(entry: LogEntry): void;
     addError(entry: ErrorEntry): void;
     addSpan(span: SpanEntry): void;
+    addRequest(entry: RequestEntry): void;
     flushLogs(): void;
     flushErrors(): void;
     flushTraces(): void;
+    flushRequests(): void;
     flushAll(): void;
     testConnection(): Promise<{
         success: boolean;

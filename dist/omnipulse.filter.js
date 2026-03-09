@@ -34,9 +34,8 @@ let OmniPulseExceptionFilter = class OmniPulseExceptionFilter {
         const statusCode = exception instanceof common_1.HttpException
             ? exception.getStatus()
             : common_1.HttpStatus.INTERNAL_SERVER_ERROR;
-        // Only capture 5xx errors (server errors) and unexpected exceptions
-        // 4xx errors are typically client errors and should not be treated as bugs
-        const shouldCapture = statusCode >= 500 || !(exception instanceof common_1.HttpException);
+        // Capture 4xx and 5xx errors (useful for Unauthorized, Validation, and internal bugs)
+        const shouldCapture = statusCode >= 400 || !(exception instanceof common_1.HttpException);
         if (shouldCapture) {
             try {
                 const error = exception instanceof Error ? exception : new Error(String(exception));
@@ -46,9 +45,9 @@ let OmniPulseExceptionFilter = class OmniPulseExceptionFilter {
                     type: error.name || 'UnhandledException',
                     message: error.message || 'Unknown error',
                     stack: error.stack,
-                    url: request.url,
+                    route: request.route?.path || request.url,
                     method: request.method,
-                    status_code: statusCode,
+                    status: statusCode,
                     timestamp: new Date().toISOString(),
                     service: this.serviceName,
                     trace_id: traceId,

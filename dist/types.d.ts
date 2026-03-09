@@ -48,9 +48,9 @@ export interface ErrorEntry {
     type: string;
     message: string;
     stack?: string;
-    url?: string;
+    route?: string;
     method?: string;
-    status_code?: number;
+    status?: number;
     timestamp: string;
     service?: string;
     meta?: Record<string, any>;
@@ -61,12 +61,25 @@ export interface SpanEntry {
     trace_id: string;
     span_id: string;
     name: string;
-    start_time: string;
-    end_time: string;
+    start_ts: string;
     duration_ms: number;
-    status_code: 'ok' | 'error';
-    status_message?: string;
+    status: 'ok' | 'error';
+    service?: string;
+    kind?: string;
     attributes?: Record<string, any>;
+    env?: string;
+    release?: string;
+}
+export interface RequestEntry {
+    timestamp: string;
+    method: string;
+    route: string;
+    status: number;
+    duration_ms: number;
+    env?: string;
+    release?: string;
+    trace_id?: string;
+    request_id?: string;
 }
 export interface TestResult {
     success: boolean;

@@ -5,9 +5,8 @@
 
 import * as http from 'http';
 import * as https from 'https';
-import * as zlib from 'zlib';
 import { URL } from 'url';
-import { OmniPulseConfig, LogEntry, ErrorEntry, SpanEntry } from './types';
+import { OmniPulseConfig, LogEntry, ErrorEntry, SpanEntry, RequestEntry } from './types';
 
 const SDK_VERSION = '0.1.1';
 const USER_AGENT = `omnipulse-nestjs-sdk/v${SDK_VERSION}`;
@@ -17,6 +16,7 @@ export class Transport {
     private logQueue: LogEntry[] = [];
     private errorQueue: ErrorEntry[] = [];
     private spanQueue: SpanEntry[] = [];
+    private requestQueue: RequestEntry[] = [];
     private flushInterval: ReturnType<typeof setInterval> | null = null;
     private readonly batchSize: number;
     private readonly flushMs: number;
@@ -51,6 +51,13 @@ export class Transport {
         }
     }
 
+    public addRequest(entry: RequestEntry): void {
+        this.requestQueue.push(entry);
+        if (this.requestQueue.length >= this.batchSize) {
+            this.flushRequests();
+        }
+    }
+
     // ─── Flush Methods ───────────────────────
 
     public flushLogs(): void {
@@ -73,10 +80,19 @@ export class Transport {
         this.send('/api/ingest/app-traces', { spans: batch });
     }
 
+    public flushRequests(): void {
+        if (this.requestQueue.length === 0) return;
+        const batch = this.requestQueue.splice(0);
+        for (const req of batch) {
+            this.send('/api/ingest/app-request', req);
+        }
+    }
+
     public flushAll(): void {
         this.flushLogs();
         this.flushErrors();
         this.flushTraces();
+        this.flushRequests();
     }
 
     // ─── Test Connection ─────────────────────
@@ -162,16 +178,8 @@ export class Transport {
     }
 
     private send(path: string, payload: Record<string, any>): void {
-        const data = JSON.stringify(payload);
-
-        zlib.gzip(data, (err, buffer) => {
-            if (err) {
-                if (this.config.debug) {
-                    console.error('[OmniPulse] GZIP failed:', err);
-                }
-                return;
-            }
-
+        try {
+            const data = JSON.stringify(payload);
             const endpoint = this.config.endpoint || 'https://api.omnipulse.cloud';
             const url = new URL(path, endpoint);
             const isHttps = url.protocol === 'https:';
@@ -184,8 +192,7 @@ export class Transport {
                 path: url.pathname + url.search,
                 headers: {
                     'Content-Type': 'application/json',
-                    'Content-Encoding': 'gzip',
-                    'Content-Length': buffer.length,
+                    'Content-Length': Buffer.byteLength(data),
                     'X-Ingest-Key': this.config.apiKey,
                     'User-Agent': USER_AGENT,
                 },
@@ -203,9 +210,13 @@ export class Transport {
             });
 
             req.on('timeout', () => req.destroy());
-            req.write(buffer);
+            req.write(data);
             req.end();
-        });
+        } catch (e) {
+            if (this.config.debug) {
+                console.error('[OmniPulse] Transport send exception:', e);
+            }
+        }
     }
 
     public stop(): void {
