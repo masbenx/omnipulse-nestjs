@@ -122,4 +122,42 @@ export interface TestResult {
     response?: any;
 }
 
+export interface AppOutgoingEntry {
+    timestamp: string;
+    method: string;
+    url: string;
+    status: number;
+    duration_ms: number;
+    error?: string;
+    env?: string;
+    trace_id?: string;
+    request_id?: string;
+}
+
+export interface AppQueryEntry {
+    timestamp: string;
+    db_system: string;
+    fingerprint?: string;
+    statement: string;
+    duration_ms: number;
+    rows?: number;
+    error?: string;
+    route?: string;
+    env?: string;
+    trace_id?: string;
+    request_id?: string;
+}
+
+export interface AppCacheEntry {
+    timestamp: string;
+    operation: string; // 'get', 'set', 'del'
+    key: string;
+    hit?: boolean;
+    duration_ms: number;
+    store: string;
+    env?: string;
+    trace_id?: string;
+    request_id?: string;
+}
+
 export const OMNIPULSE_CONFIG = 'OMNIPULSE_CONFIG';

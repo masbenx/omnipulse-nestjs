@@ -6,7 +6,7 @@
 import * as http from 'http';
 import * as https from 'https';
 import { URL } from 'url';
-import { OmniPulseConfig, LogEntry, ErrorEntry, SpanEntry, RequestEntry, JobEntry, AppMetricEntry } from './types';
+import { OmniPulseConfig, LogEntry, ErrorEntry, SpanEntry, RequestEntry, JobEntry, AppMetricEntry, AppOutgoingEntry, AppQueryEntry, AppCacheEntry } from './types';
 
 const SDK_VERSION = '0.1.1';
 const USER_AGENT = `omnipulse-nestjs-sdk/v${SDK_VERSION}`;
@@ -19,6 +19,9 @@ export class Transport {
     private requestQueue: RequestEntry[] = [];
     private jobQueue: JobEntry[] = [];
     private metricQueue: AppMetricEntry[] = [];
+    private outgoingQueue: AppOutgoingEntry[] = [];
+    private queryQueue: AppQueryEntry[] = [];
+    private cacheQueue: AppCacheEntry[] = [];
     private flushInterval: ReturnType<typeof setInterval> | null = null;
     private readonly batchSize: number;
     private readonly flushMs: number;
@@ -71,6 +74,27 @@ export class Transport {
         this.metricQueue.push(metric);
         if (this.metricQueue.length >= this.batchSize) {
             this.flushMetrics();
+        }
+    }
+
+    public addOutgoing(entry: AppOutgoingEntry): void {
+        this.outgoingQueue.push(entry);
+        if (this.outgoingQueue.length >= this.batchSize) {
+            this.flushOutgoing();
+        }
+    }
+
+    public addQuery(entry: AppQueryEntry): void {
+        this.queryQueue.push(entry);
+        if (this.queryQueue.length >= this.batchSize) {
+            this.flushQueries();
+        }
+    }
+
+    public addCache(entry: AppCacheEntry): void {
+        this.cacheQueue.push(entry);
+        if (this.cacheQueue.length >= this.batchSize) {
+            this.flushCaches();
         }
     }
 
@@ -130,6 +154,33 @@ export class Transport {
         });
     }
 
+    public flushOutgoing(): void {
+        if (this.outgoingQueue.length === 0) return;
+        const batch = this.outgoingQueue.splice(0);
+        for (const out of batch) {
+            if (!out.env) out.env = this.config.environment || 'production';
+            this.send('/api/ingest/app-outgoing', out);
+        }
+    }
+
+    public flushQueries(): void {
+        if (this.queryQueue.length === 0) return;
+        const batch = this.queryQueue.splice(0);
+        for (const q of batch) {
+            if (!q.env) q.env = this.config.environment || 'production';
+            this.send('/api/ingest/app-query', q);
+        }
+    }
+
+    public flushCaches(): void {
+        if (this.cacheQueue.length === 0) return;
+        const batch = this.cacheQueue.splice(0);
+        for (const c of batch) {
+            if (!c.env) c.env = this.config.environment || 'production';
+            this.send('/api/ingest/app-cache', c);
+        }
+    }
+
     public flushAll(): void {
         this.flushLogs();
         this.flushErrors();
@@ -137,6 +188,9 @@ export class Transport {
         this.flushRequests();
         this.flushJobs();
         this.flushMetrics();
+        this.flushOutgoing();
+        this.flushQueries();
+        this.flushCaches();
     }
 
     // ─── Test Connection ─────────────────────
