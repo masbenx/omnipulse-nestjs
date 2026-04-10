@@ -45,6 +45,22 @@ export class OmniPulseService implements OnModuleDestroy {
     }
 
     /**
+     * Log a background job execution
+     * @param jobData Job execution details
+     */
+    public captureJob(jobData: import('./types').JobEntry): void {
+        this.transport.addJob(jobData);
+    }
+
+    /**
+     * Capture application specific metric
+     * @param metricData Metric details
+     */
+    public captureMetric(metricData: import('./types').AppMetricEntry): void {
+        this.transport.addMetric(metricData);
+    }
+
+    /**
      * Test connection to OmniPulse backend.
      */
     public async test(): Promise<TestResult> {

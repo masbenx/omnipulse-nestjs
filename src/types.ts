@@ -97,6 +97,24 @@ export interface RequestEntry {
     request_id?: string;
 }
 
+export interface JobEntry {
+    job_name: string;
+    queue?: string;
+    duration_ms: number;
+    wait_time_ms: number;
+    status: 'succeeded' | 'failed' | 'error';
+    error?: string;
+    timestamp?: string;
+}
+
+export interface AppMetricEntry {
+    name: string;
+    value: number;
+    tags?: Record<string, string>;
+    timestamp?: string;
+    env?: string;
+}
+
 export interface TestResult {
     success: boolean;
     message: string;
