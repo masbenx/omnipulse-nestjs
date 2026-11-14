@@ -49,6 +49,38 @@ let OmniPulseService = class OmniPulseService {
         });
     }
     /**
+     * Log a background job execution
+     * @param jobData Job execution details
+     */
+    captureJob(jobData) {
+        this.transport.addJob(jobData);
+    }
+    /**
+     * Capture application specific metric
+     * @param metricData Metric details
+     */
+    captureMetric(metricData) {
+        this.transport.addMetric(metricData);
+    }
+    /**
+     * Capture an outbound external network request (Service Map dependency)
+     */
+    captureOutgoing(outgoingData) {
+        this.transport.addOutgoing(outgoingData);
+    }
+    /**
+     * Capture a database query execution (Insights)
+     */
+    captureQuery(queryData) {
+        this.transport.addQuery(queryData);
+    }
+    /**
+     * Capture cache set/get operations (Insights)
+     */
+    captureCache(cacheData) {
+        this.transport.addCache(cacheData);
+    }
+    /**
      * Test connection to OmniPulse backend.
      */
     async test() {

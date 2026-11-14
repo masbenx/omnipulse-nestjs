@@ -1,10 +1,15 @@
-import { OmniPulseConfig, LogEntry, ErrorEntry, SpanEntry, RequestEntry } from './types';
+import { OmniPulseConfig, LogEntry, ErrorEntry, SpanEntry, RequestEntry, JobEntry, AppMetricEntry, AppOutgoingEntry, AppQueryEntry, AppCacheEntry } from './types';
 export declare class Transport {
     private config;
     private logQueue;
     private errorQueue;
     private spanQueue;
     private requestQueue;
+    private jobQueue;
+    private metricQueue;
+    private outgoingQueue;
+    private queryQueue;
+    private cacheQueue;
     private flushInterval;
     private readonly batchSize;
     private readonly flushMs;
@@ -13,10 +18,20 @@ export declare class Transport {
     addError(entry: ErrorEntry): void;
     addSpan(span: SpanEntry): void;
     addRequest(entry: RequestEntry): void;
+    addJob(job: JobEntry): void;
+    addMetric(metric: AppMetricEntry): void;
+    addOutgoing(entry: AppOutgoingEntry): void;
+    addQuery(entry: AppQueryEntry): void;
+    addCache(entry: AppCacheEntry): void;
     flushLogs(): void;
     flushErrors(): void;
     flushTraces(): void;
     flushRequests(): void;
+    flushJobs(): void;
+    flushMetrics(): void;
+    flushOutgoing(): void;
+    flushQueries(): void;
+    flushCaches(): void;
     flushAll(): void;
     testConnection(): Promise<{
         success: boolean;
