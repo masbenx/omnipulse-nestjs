@@ -45,6 +45,43 @@ export class OmniPulseService implements OnModuleDestroy {
     }
 
     /**
+     * Log a background job execution
+     * @param jobData Job execution details
+     */
+    public captureJob(jobData: import('./types').JobEntry): void {
+        this.transport.addJob(jobData);
+    }
+
+    /**
+     * Capture application specific metric
+     * @param metricData Metric details
+     */
+    public captureMetric(metricData: import('./types').AppMetricEntry): void {
+        this.transport.addMetric(metricData);
+    }
+
+    /**
+     * Capture an outbound external network request (Service Map dependency)
+     */
+    public captureOutgoing(outgoingData: import('./types').AppOutgoingEntry): void {
+        this.transport.addOutgoing(outgoingData);
+    }
+
+    /**
+     * Capture a database query execution (Insights)
+     */
+    public captureQuery(queryData: import('./types').AppQueryEntry): void {
+        this.transport.addQuery(queryData);
+    }
+
+    /**
+     * Capture cache set/get operations (Insights)
+     */
+    public captureCache(cacheData: import('./types').AppCacheEntry): void {
+        this.transport.addCache(cacheData);
+    }
+
+    /**
      * Test connection to OmniPulse backend.
      */
     public async test(): Promise<TestResult> {

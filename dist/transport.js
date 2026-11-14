@@ -49,6 +49,11 @@ class Transport {
         this.errorQueue = [];
         this.spanQueue = [];
         this.requestQueue = [];
+        this.jobQueue = [];
+        this.metricQueue = [];
+        this.outgoingQueue = [];
+        this.queryQueue = [];
+        this.cacheQueue = [];
         this.flushInterval = null;
         this.config = config;
         this.batchSize = config.batchSize ?? 50;
@@ -80,6 +85,36 @@ class Transport {
             this.flushRequests();
         }
     }
+    addJob(job) {
+        this.jobQueue.push(job);
+        if (this.jobQueue.length >= this.batchSize) {
+            this.flushJobs();
+        }
+    }
+    addMetric(metric) {
+        this.metricQueue.push(metric);
+        if (this.metricQueue.length >= this.batchSize) {
+            this.flushMetrics();
+        }
+    }
+    addOutgoing(entry) {
+        this.outgoingQueue.push(entry);
+        if (this.outgoingQueue.length >= this.batchSize) {
+            this.flushOutgoing();
+        }
+    }
+    addQuery(entry) {
+        this.queryQueue.push(entry);
+        if (this.queryQueue.length >= this.batchSize) {
+            this.flushQueries();
+        }
+    }
+    addCache(entry) {
+        this.cacheQueue.push(entry);
+        if (this.cacheQueue.length >= this.batchSize) {
+            this.flushCaches();
+        }
+    }
     // ─── Flush Methods ───────────────────────
     flushLogs() {
         if (this.logQueue.length === 0)
@@ -109,11 +144,72 @@ class Transport {
             this.send('/api/ingest/app-request', req);
         }
     }
+    flushJobs() {
+        if (this.jobQueue.length === 0)
+            return;
+        const batch = this.jobQueue.splice(0);
+        for (const job of batch) {
+            this.send('/api/ingest/app-job', {
+                job_name: job.job_name,
+                queue: job.queue,
+                duration_ms: job.duration_ms,
+                wait_time_ms: job.wait_time_ms,
+                status: job.status,
+                error: job.error,
+                ts: job.timestamp || new Date().toISOString()
+            });
+        }
+    }
+    flushMetrics() {
+        if (this.metricQueue.length === 0)
+            return;
+        const batch = this.metricQueue.splice(0);
+        this.send('/api/ingest/app-metrics', {
+            service_name: this.config.serviceName || 'nestjs-app',
+            environment: this.config.environment || 'production',
+            metrics: batch
+        });
+    }
+    flushOutgoing() {
+        if (this.outgoingQueue.length === 0)
+            return;
+        const batch = this.outgoingQueue.splice(0);
+        for (const out of batch) {
+            if (!out.env)
+                out.env = this.config.environment || 'production';
+            this.send('/api/ingest/app-outgoing', out);
+        }
+    }
+    flushQueries() {
+        if (this.queryQueue.length === 0)
+            return;
+        const batch = this.queryQueue.splice(0);
+        for (const q of batch) {
+            if (!q.env)
+                q.env = this.config.environment || 'production';
+            this.send('/api/ingest/app-query', q);
+        }
+    }
+    flushCaches() {
+        if (this.cacheQueue.length === 0)
+            return;
+        const batch = this.cacheQueue.splice(0);
+        for (const c of batch) {
+            if (!c.env)
+                c.env = this.config.environment || 'production';
+            this.send('/api/ingest/app-cache', c);
+        }
+    }
     flushAll() {
         this.flushLogs();
         this.flushErrors();
         this.flushTraces();
         this.flushRequests();
+        this.flushJobs();
+        this.flushMetrics();
+        this.flushOutgoing();
+        this.flushQueries();
+        this.flushCaches();
     }
     // ─── Test Connection ─────────────────────
     testConnection() {

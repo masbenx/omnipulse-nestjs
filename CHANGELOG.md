@@ -1,3 +1,7 @@
+## [v0.1.3] - 2026-11-15
+### Added
+- Add Vitest configuration and module unit tests (`src/module.test.ts`), rebuilt `dist/` artifacts.
+
 ## [v0.1.2] - 2026-03-09
 ### Fixed
 - Align span fields with backend DTO and add request event tracking

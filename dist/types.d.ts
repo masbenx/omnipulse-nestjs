@@ -81,11 +81,62 @@ export interface RequestEntry {
     trace_id?: string;
     request_id?: string;
 }
+export interface JobEntry {
+    job_name: string;
+    queue?: string;
+    duration_ms: number;
+    wait_time_ms: number;
+    status: 'succeeded' | 'failed' | 'error';
+    error?: string;
+    timestamp?: string;
+}
+export interface AppMetricEntry {
+    name: string;
+    value: number;
+    tags?: Record<string, string>;
+    timestamp?: string;
+    env?: string;
+}
 export interface TestResult {
     success: boolean;
     message: string;
     httpCode?: number;
     response?: any;
+}
+export interface AppOutgoingEntry {
+    timestamp: string;
+    method: string;
+    url: string;
+    status: number;
+    duration_ms: number;
+    error?: string;
+    env?: string;
+    trace_id?: string;
+    request_id?: string;
+}
+export interface AppQueryEntry {
+    timestamp: string;
+    db_system: string;
+    fingerprint?: string;
+    statement: string;
+    duration_ms: number;
+    rows?: number;
+    error?: string;
+    route?: string;
+    env?: string;
+    trace_id?: string;
+    request_id?: string;
+}
+export interface AppCacheEntry {
+    timestamp: string;
+    operation: string;
+    key: string;
+    hit?: boolean;
+    duration_ms: number;
+    store: string;
+    env?: string;
+    trace_id?: string;
+    request_id?: string;
 }
 export declare const OMNIPULSE_CONFIG = "OMNIPULSE_CONFIG";
 //# sourceMappingURL=types.d.ts.map
