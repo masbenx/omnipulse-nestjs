@@ -8,7 +8,7 @@ import * as https from 'https';
 import { URL } from 'url';
 import { OmniPulseConfig, LogEntry, ErrorEntry, SpanEntry, RequestEntry, JobEntry, AppMetricEntry, AppOutgoingEntry, AppQueryEntry, AppCacheEntry } from './types';
 
-const SDK_VERSION = '0.1.1';
+const SDK_VERSION = '0.1.4';
 const USER_AGENT = `omnipulse-nestjs-sdk/v${SDK_VERSION}`;
 
 export class Transport {

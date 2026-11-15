@@ -8,7 +8,7 @@ import { Transport } from './transport';
 import { OmniPulseConfig, TestResult, OMNIPULSE_CONFIG } from './types';
 import { OmniPulseLogger } from './omnipulse.logger';
 
-const SDK_VERSION = '0.1.0';
+const SDK_VERSION = '0.1.4';
 
 @Injectable()
 export class OmniPulseService implements OnModuleDestroy {
