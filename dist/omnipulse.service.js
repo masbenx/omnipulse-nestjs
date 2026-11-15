@@ -21,7 +21,7 @@ const common_1 = require("@nestjs/common");
 const transport_1 = require("./transport");
 const types_1 = require("./types");
 const omnipulse_logger_1 = require("./omnipulse.logger");
-const SDK_VERSION = '0.1.0';
+const SDK_VERSION = '0.1.4';
 let OmniPulseService = class OmniPulseService {
     constructor(config) {
         this.config = config;

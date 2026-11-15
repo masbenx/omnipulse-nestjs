@@ -41,7 +41,7 @@ exports.Transport = void 0;
 const http = __importStar(require("http"));
 const https = __importStar(require("https"));
 const url_1 = require("url");
-const SDK_VERSION = '0.1.1';
+const SDK_VERSION = '0.1.4';
 const USER_AGENT = `omnipulse-nestjs-sdk/v${SDK_VERSION}`;
 class Transport {
     constructor(config) {
