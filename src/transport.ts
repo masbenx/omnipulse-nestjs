@@ -236,17 +236,25 @@ export class Transport {
                     res.on('data', (chunk) => (data += chunk));
                     res.on('end', () => {
                         const statusCode = res.statusCode || 0;
+                        let parsedResponse: unknown = null;
+                        if (data) {
+                            try {
+                                parsedResponse = JSON.parse(data);
+                            } catch {
+                                parsedResponse = data;
+                            }
+                        }
                         if (statusCode >= 200 && statusCode < 300) {
                             resolve({
                                 success: true,
                                 httpCode: statusCode,
-                                response: data ? JSON.parse(data) : null,
+                                response: parsedResponse,
                             });
                         } else {
                             resolve({
                                 success: false,
                                 httpCode: statusCode,
-                                response: data ? JSON.parse(data) : null,
+                                response: parsedResponse,
                             });
                         }
                     });
@@ -273,6 +281,7 @@ export class Transport {
         this.flushInterval = setInterval(() => {
             this.flushAll();
         }, this.flushMs);
+        this.flushInterval.unref?.();
     }
 
     private send(path: string, payload: Record<string, any>): void {
